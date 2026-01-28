@@ -1,0 +1,738 @@
+@startuml HR Store Inventory System - Advanced Flowchart
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 10
+skinparam shadowing true
+skinparam activity {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+  FontColor #000000
+}
+skinparam arrow {
+  Color #1976D2
+}
+
+title HR Store Inventory Management System\nAdvanced System Flowchart
+
+' ============================================================================
+' SYSTEM ARCHITECTURE OVERVIEW
+' ============================================================================
+
+start
+
+:HR Store Inventory System;
+
+partition "Frontend Layer" {
+  :Web Browser;
+  :Next.js Application;
+  :React Components;
+  :API Client Layer;
+  :State Management;
+}
+
+partition "Backend Layer" {
+  :FastAPI Server;
+  :API Routes;
+  :Authentication Module;
+  :Business Logic Layer;
+  :Database ORM;
+}
+
+partition "Database Layer" {
+  :MySQL Database;
+  :Users Table;
+  :Boxes Table;
+  :Items Table;
+  :Inventory Table;
+  :Transactions Table;
+  :Stores Table;
+  :Categories Table;
+}
+
+stop
+
+' ============================================================================
+' AUTHENTICATION FLOW
+' ============================================================================
+
+start
+
+:User Access Application;
+:Navigate to Login Page;
+:Enter Username and Password;
+:Submit Login Form;
+
+note right
+  **API Call:**
+  POST /api/auth/login/json
+  {username, password}
+end note
+
+:FastAPI Receives Request;
+:Authentication Module Validates Credentials;
+:Query User from Database\nSELECT * FROM users WHERE username = ?;
+
+if (User Found?) then (No)
+  :Return 401 Unauthorized;
+  :Display Error Message;
+  stop
+else (Yes)
+endif
+
+:Verify Password Hash;
+if (Password Valid?) then (No)
+  :Return 401 Unauthorized;
+  :Display Error Message;
+  stop
+else (Yes)
+endif
+
+:Generate JWT Token;
+:Update Last Login Timestamp;
+:Return Token + User Info;
+
+:Store Token in Frontend State;
+:Update UI to Authenticated View;
+:Redirect to Dashboard;
+
+stop
+
+' ============================================================================
+' BOX RECEIVING WORKFLOW
+' ============================================================================
+
+start
+
+:User Navigates to Receiving Page;
+:Click "Receive Box" Button;
+:Open Receive Box Modal;
+
+:Fill Box Details:
+- Supplier Name
+- PO Number
+- DO Number
+- Invoice Number
+- Received Date
+- Notes;
+
+:Add Items to Box:
+- Select Item Type/Batch
+- Select Size (if applicable)
+- Select Color (if applicable)
+- Enter Quantity;
+
+:Click "Submit" Button;
+
+note right
+  **API Call:**
+  POST /api/boxes/
+  {
+    supplier, po_number, do_number,
+    invoice_number, received_date,
+    contents: [{type_id, size, color, quantity}]
+  }
+end note
+
+:FastAPI Receives Request;
+:Business Logic Processes Box Creation;
+
+:Generate Box Code\n(Auto-increment format);
+:Generate QR Code\n(Same as Box Code);
+:Create Box Record\nStatus: pending_checkin;
+
+note right
+  **Database:**
+  INSERT INTO boxes
+  (box_code, qr_code, supplier, ...)
+end note
+
+:For Each Content Item in Box:;
+
+if (ItemBatch Exists?) then (No)
+  :Create ItemBatch Record;
+  note right
+    **Database:**
+    INSERT INTO item_batches
+    (type_id, year_code, ...)
+  end note
+else (Yes)
+  :Use Existing Batch;
+endif
+
+if (Item Exists?) then (No)
+  :Create Item Record;
+  note right
+    **Database:**
+    INSERT INTO items
+    (item_code, item_name, batch_id, ...)
+  end note
+else (Yes)
+  :Use Existing Item;
+endif
+
+:Create BoxContent Record;
+note right
+  **Database:**
+  INSERT INTO box_contents
+  (box_id, item_id, quantity)
+end note
+
+:Return Box with Contents;
+:Update Frontend Boxes List;
+:Display Success Message;
+:Box Status: **pending_checkin**;
+
+stop
+
+' ============================================================================
+' BOX CHECK-IN WORKFLOW
+' ============================================================================
+
+start
+
+:User Views Receiving Page;
+:Select Box with Status: pending_checkin;
+:Click "Check In" Button;
+:Open Check-in Modal;
+
+:Select Store from Dropdown;
+:Enter Location in Store;
+:Click "Submit Check-in";
+
+note right
+  **API Call:**
+  PUT /api/boxes/{box_id}/checkin
+  {
+    store_id,
+    location_in_store
+  }
+end note
+
+:FastAPI Receives Request;
+:Business Logic Processes Check-in;
+
+:Query Box from Database;
+note right
+  **Database:**
+  SELECT * FROM boxes
+  WHERE box_id = ?
+end note
+
+if (Box Status == pending_checkin?) then (No)
+  :Return Error: Box Already Checked In;
+  :Display Error Message;
+  stop
+else (Yes)
+endif
+
+:Update Box Status to checked_in;
+:Set checked_in_date = NOW();
+:Set checked_in_by = current_user;
+:Set store_id and location_in_store;
+
+note right
+  **Database:**
+  UPDATE boxes
+  SET status='checked_in',
+      store_id=?, checked_in_at=NOW()
+  WHERE box_id=?
+end note
+
+:For Each BoxContent Item:;
+
+:Get Item Details;
+:Get ItemType Min/Max Stock Levels;
+
+:Create Inventory Record;
+note right
+  **Database:**
+  INSERT INTO inventory
+  (store_id, item_id, box_id, quantity,
+   min_level, max_level)
+end note
+
+:Create Stock Transaction Record;
+note right
+  **Database:**
+  INSERT INTO stock_transactions
+  (transaction_type='box_checkin',
+   box_id, item_id, quantity, ...)
+end note
+
+:Return Check-in Success;
+:Update Frontend Box Status;
+:Display Success Message;
+:Box Status: **checked_in**;
+
+stop
+
+' ============================================================================
+' INVENTORY MANAGEMENT FLOW
+' ============================================================================
+
+start
+
+:User Navigates to Inventory Page;
+
+note right
+  **API Call:**
+  GET /api/inventory/
+  ?store_id=&status=&search=
+end note
+
+:FastAPI Receives Request;
+:Business Logic Processes Request;
+:Query Inventory from Database;
+
+note right
+  **Database:**
+  SELECT * FROM inventory
+  JOIN items, stores, boxes
+  WHERE conditions
+end note
+
+:Return Inventory List;
+:Display Inventory Grid/List View;
+
+:User Selects Action;
+
+if (Action == Stock In?) then (Yes)
+  :Open Stock In Modal;
+  :Enter Quantity;
+  :Enter Reason (optional);
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    POST /api/inventory/stock-in
+    {item_id, store_id, quantity, reason}
+  end note
+  
+  :Update Inventory Quantity;
+  note right
+    **Database:**
+    UPDATE inventory
+    SET quantity = quantity + ?
+    WHERE item_id=? AND store_id=?
+  end note
+  
+  :Create Stock Transaction;
+  note right
+    **Database:**
+    INSERT INTO stock_transactions
+    (transaction_type='stock_in', ...)
+  end note
+  
+  :Refresh Inventory Display;
+  
+elseif (Action == Stock Out?) then (Yes)
+  :Open Stock Out Modal;
+  :Enter Quantity;
+  :Enter Employee Information;
+  :Enter Reason;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    POST /api/inventory/stock-out
+    {item_id, store_id, quantity,
+     employee_name, employee_id, reason}
+  end note
+  
+  :Check Available Quantity;
+  
+  if (Available Quantity >= Requested?) then (No)
+    :Return Error: Insufficient Stock;
+    :Display Error Message;
+    stop
+  else (Yes)
+  endif
+  
+  :Update Inventory Quantity;
+  note right
+    **Database:**
+    UPDATE inventory
+    SET quantity = quantity - ?
+    WHERE item_id=? AND store_id=?
+  end note
+  
+  :Create Stock Transaction;
+  note right
+    **Database:**
+    INSERT INTO stock_transactions
+    (transaction_type='stock_out', ...)
+  end note
+  
+  :Refresh Inventory Display;
+  
+elseif (Action == Transfer?) then (Yes)
+  :Open Transfer Modal;
+  :Select From Store;
+  :Select To Store;
+  :Enter Quantity;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    POST /api/inventory/transfer
+    {item_id, from_store_id, to_store_id, quantity}
+  end note
+  
+  :Check Source Quantity;
+  
+  if (Source Quantity >= Requested?) then (No)
+    :Return Error: Insufficient Stock;
+    :Display Error Message;
+    stop
+  else (Yes)
+  endif
+  
+  :Update Source Inventory;
+  note right
+    **Database:**
+    UPDATE inventory
+    SET quantity = quantity - ?
+    WHERE item_id=? AND store_id=from_store_id
+  end note
+  
+  :Update/Create Destination Inventory;
+  note right
+    **Database:**
+    UPDATE/INSERT inventory
+    SET quantity = quantity + ?
+    WHERE item_id=? AND store_id=to_store_id
+  end note
+  
+  :Create Transfer Transactions;
+  note right
+    **Database:**
+    INSERT INTO stock_transactions
+    (transfer_out, transfer_in records)
+  end note
+  
+  :Refresh Inventory Display;
+endif
+
+:Show Updated Inventory;
+
+stop
+
+' ============================================================================
+' MASTER DATA MANAGEMENT
+' ============================================================================
+
+start
+
+:User Navigates to Master Data Page\n(Categories/Stores/Items);
+
+note right
+  **API Call:**
+  GET /api/{resource}/
+  ?status=&search=&skip=&limit=
+end note
+
+:FastAPI Receives Request;
+:Business Logic Processes Request;
+:Query Resource from Database;
+
+note right
+  **Database:**
+  SELECT * FROM {table}
+  JOIN related tables
+  WHERE conditions
+end note
+
+:Return Resource List;
+:Display Resource Grid/List;
+
+:User Selects Action;
+
+if (Action == Create?) then (Yes)
+  :Open Create Modal;
+  :Fill Resource Details;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    POST /api/{resource}/
+    {resource_data}
+  end note
+  
+  :Create Resource Record;
+  note right
+    **Database:**
+    INSERT INTO {table}
+    (fields...)
+  end note
+  
+  :Refresh Resource List;
+  
+elseif (Action == Update?) then (Yes)
+  :Open Edit Modal;
+  :Modify Resource Details;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    PUT /api/{resource}/{id}
+    {updated_data}
+  end note
+  
+  :Update Resource Record;
+  note right
+    **Database:**
+    UPDATE {table}
+    SET fields...
+    WHERE id=?
+  end note
+  
+  :Refresh Resource List;
+  
+elseif (Action == Delete?) then (Yes)
+  :Confirm Deletion;
+  
+  if (Confirmed?) then (No)
+    :Cancel;
+    stop
+  else (Yes)
+  endif
+  
+  note right
+    **API Call:**
+    DELETE /api/{resource}/{id}
+  end note
+  
+  :Delete Resource Record;
+  note right
+    **Database:**
+    DELETE FROM {table}
+    WHERE id=?
+  end note
+  
+  :Refresh Resource List;
+endif
+
+:Show Updated Master Data;
+
+stop
+
+' ============================================================================
+' USER MANAGEMENT FLOW
+' ============================================================================
+
+start
+
+:User Navigates to Users Page\n(Admin Only);
+
+note right
+  **API Call:**
+  GET /api/users/
+  Requires: Admin Role
+end note
+
+:FastAPI Receives Request;
+:Authentication Module Verifies Admin Role;
+
+if (User Role == Admin?) then (No)
+  :Return 403 Forbidden;
+  :Display Access Denied;
+  stop
+else (Yes)
+endif
+
+:Business Logic Processes Request;
+:Query Users from Database;
+
+note right
+  **Database:**
+  SELECT * FROM users
+  ORDER BY created_at DESC
+end note
+
+:Return Users List;
+:Display Users Table;
+
+:User Selects Action;
+
+if (Action == Create User?) then (Yes)
+  :Open Create User Modal;
+  :Fill User Details:
+  - Username
+  - Email
+  - Full Name
+  - Role
+  - Password;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    POST /api/users/
+    {user_data}
+  end note
+  
+  :Hash Password;
+  :Create User Record;
+  note right
+    **Database:**
+    INSERT INTO users
+    (username, email, password_hash, ...)
+  end note
+  
+  :Refresh Users List;
+  
+elseif (Action == Update User?) then (Yes)
+  :Open Edit User Modal;
+  :Modify User Details;
+  :Click "Submit";
+  
+  note right
+    **API Call:**
+    PUT /api/users/{id}
+    {updated_data}
+  end note
+  
+  if (Password Changed?) then (Yes)
+    :Hash New Password;
+  else (No)
+  endif
+  
+  :Update User Record;
+  note right
+    **Database:**
+    UPDATE users
+    SET fields...
+    WHERE user_id=?
+  end note
+  
+  :Refresh Users List;
+endif
+
+:Show Updated Users;
+
+stop
+
+' ============================================================================
+' REPORTS GENERATION
+' ============================================================================
+
+start
+
+:User Navigates to Reports Page;
+:Select Report Type:
+- Inventory Report
+- Transaction Report
+- Store Report
+- Box Report;
+
+:Set Date Range;
+:Set Filters (Store, Item, etc.);
+:Click "Generate Report";
+
+note right
+  **API Call:**
+  GET /api/reports/
+  ?type=&date_from=&date_to=&store_id=
+end note
+
+:FastAPI Receives Request;
+:Business Logic Processes Request;
+:Query Transactions/Inventory from Database;
+
+note right
+  **Database:**
+  SELECT * FROM stock_transactions
+  JOIN items, stores
+  WHERE date_range AND filters
+end note
+
+:Return Transaction Data;
+:Business Logic Aggregates Data:
+- Group by Store
+- Group by Item
+- Group by Date
+- Calculate Totals;
+
+:Calculate Summary:
+- Total Stock In
+- Total Stock Out
+- Total Transfers
+- Net Change;
+
+:Return Report Data;
+:Display Charts and Tables;
+:Show Report Summary;
+
+stop
+
+' ============================================================================
+' NOTIFICATIONS SYSTEM
+' ============================================================================
+
+start
+
+partition "Background Process" {
+  :System Checks Low Stock\n(Every 5 Minutes);
+  
+  :Query Inventory from Database;
+  note right
+    **Database:**
+    SELECT * FROM inventory
+    WHERE quantity < min_level
+  end note
+  
+  :For Each Low Stock Item:;
+  
+  :Create Notification Record;
+  note right
+    **Database:**
+    INSERT INTO notifications
+    (type='low_stock', item_id, store_id, ...)
+  end note
+}
+
+partition "Frontend Polling" {
+  :Frontend Polls Notifications\n(Every 30 seconds);
+  
+  note right
+    **API Call:**
+    GET /api/notifications/
+    ?status=unread
+  end note
+  
+  :FastAPI Receives Request;
+  :Query Notifications from Database;
+  
+  note right
+    **Database:**
+    SELECT * FROM notifications
+    WHERE user_id=? AND status='unread'
+  end note
+  
+  :Return Notifications List;
+  :Display Notification Badge;
+  :Show Notification Count;
+  
+  :User Clicks Notification;
+  :Mark Notification as Read;
+  
+  note right
+    **API Call:**
+    PUT /api/notifications/{id}/read
+  end note
+  
+  :Update Notification Status;
+  note right
+    **Database:**
+    UPDATE notifications
+    SET status='read', read_at=NOW()
+    WHERE notification_id=?
+  end note
+}
+
+stop
+
+@enduml
+

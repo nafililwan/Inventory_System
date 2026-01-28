@@ -1,0 +1,12 @@
+# Database Configuration
+DATABASE_URL=mysql+pymysql://root:password@localhost:3306/hr_store_inventory
+
+# JWT Configuration
+SECRET_KEY=your-secret-key-change-in-production-min-32-chars
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Application Settings
+DEBUG=True
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+

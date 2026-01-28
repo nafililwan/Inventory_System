@@ -1,0 +1,284 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: rgb(229 231 235); /* gray-200 */
+  }
+  
+  body {
+    background-color: rgb(249 250 251); /* gray-50 */
+    color: rgb(17 24 39); /* gray-900 */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Dark mode styles */
+  .dark * {
+    border-color: rgb(55 65 81); /* gray-700 */
+  }
+
+  .dark body {
+    background-color: rgb(17 24 39); /* gray-900 */
+    color: rgb(243 244 246); /* gray-100 */
+  }
+}
+
+@layer utilities {
+  /* Custom scrollbar - Desktop */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(209 213 219) rgb(243 244 246);
+  }
+
+  .dark .custom-scrollbar {
+    scrollbar-color: rgb(75 85 99) rgb(31 41 55);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: rgb(243 244 246); /* gray-100 */
+    border-radius: 0.25rem;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: rgb(31 41 55); /* gray-800 */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219); /* gray-300 */
+    border-radius: 0.25rem;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgb(75 85 99); /* gray-600 */
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(156 163 175); /* gray-400 */
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(107 114 128); /* gray-500 */
+  }
+
+  /* Mobile bottom navigation spacing */
+  @media (max-width: 1023px) {
+    /* Add padding-bottom to main content to avoid bottom nav */
+    main {
+      padding-bottom: 5.5rem !important; /* 88px for bottom nav (64px) + safe area + extra space */
+    }
+    
+    /* For pages with forms/buttons at bottom, add extra padding */
+    .mobile-safe-bottom,
+    .pb-safe-bottom {
+      padding-bottom: calc(6rem + env(safe-area-inset-bottom)) !important; /* Extra space for buttons */
+    }
+  }
+
+  /* Mobile scrollbar override */
+  @media (max-width: 640px) {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+  }
+
+  /* Hide scrollbar for sidebar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Glass morphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(to right, rgb(37 99 235), rgb(29 78 216)); /* blue-600 to blue-700 */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Card hover effect */
+  .card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-hover:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-0.25rem);
+  }
+
+  /* Button ripple effect */
+  .ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s ease-out;
+}
+
+/* Mobile PWA optimizations */
+@layer utilities {
+  /* Touch-friendly targets - minimum 44x44px */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Prevent text selection on buttons */
+  button, .btn {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Safe area insets for mobile */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Print-specific styles - Hide all navigation */
+@media print {
+  /* Hide all navigation elements */
+  nav,
+  aside,
+  header:not(.print-header),
+  footer:not(.print-footer),
+  [role="navigation"],
+  [class*="nav"],
+  [class*="sidebar"],
+  [class*="header"]:not(.print-header),
+  [class*="footer"]:not(.print-footer),
+  .mobile-nav,
+  .bottom-nav,
+  .fixed:not(.print-content),
+  .sticky:not(.print-content),
+  .fixed.bottom-0,
+  .sticky.bottom-0 {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Show only print content */
+  .print\:block {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Reset body */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* Color accuracy */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
