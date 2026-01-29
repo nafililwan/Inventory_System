@@ -2,6 +2,18 @@
 
 Backend has been completely reset and is ready for fresh implementation.
 
+---
+
+## 🌐 **AKSES SISTEM (LIVE)**
+
+**Intern / team boleh buka sistem yang dah deploy di sini:**
+
+👉 **[https://jabilinventory.store](https://jabilinventory.store)**
+
+*(Tekan link di atas untuk buka sistem Inventory di browser.)*
+
+---
+
 ## ✅ Current Status
 
 - **Backend**: Clean slate - only authentication and user management

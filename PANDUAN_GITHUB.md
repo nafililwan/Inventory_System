@@ -12,6 +12,16 @@ Kita nak upload semua kod projek Inventory System ni ke GitHub supaya:
 
 ---
 
+## 🌐 **LINK BUKA SISTEM (LIVE)**
+
+Kalau nak **buka sistem yang dah jalan** (bukan kod, tapi aplikasi sebenar):
+
+👉 **[https://jabilinventory.store](https://jabilinventory.store)**
+
+Tekan link tu — sistem Inventory akan keluar di browser.
+
+---
+
 ## 📋 **BAHAN-BAHAN YANG PERLU:**
 1. ✅ Komputer dengan projek ni (dah ada!)
 2. ✅ Akaun GitHub (kalau belum ada, kita buat dulu)
